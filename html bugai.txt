@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dodge the Blocks</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --accent:#7c3aed;
+      --muted:#94a3b8;
+      --player:#10b981;
+      --danger:#ef4444;
+      --glass: rgba(255,255,255,0.04);
+      --radius:14px;
+      --shadow: 0 6px 20px rgba(2,6,23,0.6);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:
+        radial-gradient(1200px 600px at 10% 10%, rgba(124,58,237,0.12), transparent 8%),
+        radial-gradient(900px 500px at 90% 90%, rgba(16,185,129,0.06), transparent 8%),
+        var(--bg);
+      color:#e6eef8;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:24px;
+    }
+
+    .container{
+      width:min(980px, 96vw);
+      display:grid;
+      grid-template-columns: 300px 1fr;
+      gap:20px;
+      align-items:start;
+    }
+
+    /* Sidebar */
+    .card{
+      background:linear-gradient(180deg,var(--card), rgba(255,255,255,0.01));
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(255,255,255,0.03);
+    }
+
+    h1{
+      margin:0 0 8px 0;
+      font-size:20px;
+      letter-spacing:0.2px;
+    }
+    p.lead{margin:0 0 16px 0; color:var(--muted); font-size:13px}
+
+    .stats{
+      display:flex;
+      gap:8px;
+      margin-bottom:12px;
+      flex-wrap:wrap;
+    }
+    .pill{
+      background:var(--glass);
+      padding:8px 10px;
+      border-radius:10px;
+      font-size:13px;
+      color:var(--muted);
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .big{
+      font-weight:700;
+      color:#ffffff;
+      font-size:22px;
+    }
+
+    /* Game panel */
+    .stage-wrap{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .stage{
+      position:relative;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:var(--radius);
+      height:580px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.03);
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+    }
+
+    /* Player */
+    .player{
+      position:absolute;
+      bottom:16px;
+      width:64px;
+      height:64px;
+      border-radius:10px;
+      background:linear-gradient(180deg,var(--player), #059669);
+      box-shadow: 0 10px 30px rgba(16,185,129,0.14), 0 2px 0 rgba(0,0,0,0.2) inset;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:700;
+      font-size:12px;
+      color:white;
+      transform:translateX(0);
+      transition: transform 0.06s linear;
+    }
+
+    /* Obstacles */
+    .obstacle{
+      position:absolute;
+      width:48px;
+      height:48px;
+      border-radius:8px;
+      background:linear-gradient(180deg,#ef4444,#dc2626);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.5);
+    }
+
+    /* Controls */
+    .controls{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-top:6px;
+    }
+    button.btn{
+      background:linear-gradient(90deg,var(--accent), #5b21b6);
+      border:0;
+      padding:10px 14px;
+      border-radius:10px;
+      color:white;
+      cursor:pointer;
+      font-weight:700;
+      box-shadow: 0 8px 20px rgba(124,58,237,0.18);
+    }
+    button.btn.ghost{
+      background:transparent;
+      border:1px solid rgba(255,255,255,0.06);
+      box-shadow:none;
+      color:var(--muted);
+      font-weight:600;
+    }
+
+    .hint{font-size:13px;color:var(--muted);margin-top:8px}
+    .center-overlay{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+    }
+    .overlay{
+      pointer-events:auto;
+      background:linear-gradient(180deg, rgba(2,6,23,0.6), rgba(2,6,23,0.7));
+      border-radius:12px;
+      padding:16px 18px;
+      text-align:center;
+      width:80%;
+      max-width:420px;
+      border:1px solid rgba(255,255,255,0.03);
+    }
+    .overlay h2{margin:0 0 6px 0;font-size:18px}
+    .overlay p{margin:0 0 12px 0;color:var(--muted);font-size:13px}
+
+    footer.attribution{font-size:12px;color:var(--muted);margin-top:12px}
+
+    /* Responsive */
+    @media (max-width:880px){
+      .container{grid-template-columns:1fr; width:94vw}
+      .stage{height:66vh; min-height:420px}
+      .player{width:56px;height:56px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="application" aria-label="Dodge the Blocks game">
+    <aside class="card" aria-hidden="false">
+      <h1>Dodge the Blocks</h1>
+      <p class="lead">Move left and right to avoid falling blocks. Difficulty increases over time. Works on desktop and mobile.</p>
+
+      <div class="stats" aria-hidden="false">
+        <div class="pill">Score <span id="score" class="big">0</span></div>
+        <div class="pill">High <span id="highscore" class="big">0</span></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="controls">
+          <button id="startBtn" class="btn">Start</button>
+          <button id="pauseBtn" class="btn ghost">Pause</button>
+          <button id="restartBtn" class="btn ghost">Restart</button>
+        </div>
+        <div class="hint">Controls: ← → or A / D (tap left/right on mobile)</div>
+        <div style="margin-top:8px;color:var(--muted);font-size:13px">
+          <strong>Tips:</strong>
+          <ul style="margin:6px 0 0 18px;padding:0;color:var(--muted)">
+            <li>Keep moving — patterns get denser over time.</li>
+            <li>Tap the stage to toggle pause on mobile.</li>
+          </ul>
+        </div>
+      </div>
+
+      <footer class="attribution">Built with plain HTML/CSS/JS — save & play locally.</footer>
+    </aside>
+
+    <section class="stage-wrap">
+      <div id="stage" class="card stage" tabindex="0" aria-label="game stage">
+        <div id="player" class="player" role="img" aria-label="player">YOU</div>
+        <div id="centerOverlay" class="center-overlay" aria-hidden="false">
+          <div id="overlay" class="overlay">
+            <h2>Press Start</h2>
+            <p>Avoid the red blocks. Score increases while you survive.</p>
+            <div style="display:flex;gap:8px;justify-content:center">
+              <button id="overlayStart" class="btn">Start</button>
+              <button id="overlayHelp" class="btn ghost">How to play</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:center">
+        <div style="color:var(--muted);font-size:13px">Difficulty: <span id="difficulty">Easy</span></div>
+        <div style="flex:1"></div>
+        <div style="color:var(--muted);font-size:13px">Time: <span id="time">0.0s</span></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    /* Dodge the Blocks - simple game engine */
+    (function(){
+      const stage = document.getElementById('stage');
+      const player = document.getElementById('player');
+      const scoreEl = document.getElementById('score');
+      const highEl = document.getElementById('highscore');
+      const difficultyEl = document.getElementById('difficulty');
+      const timeEl = document.getElementById('time');
+      const overlay = document.getElementById('overlay');
+      const centerOverlay = document.getElementById('centerOverlay');
+
+      const startBtn = document.getElementById('startBtn');
+      const pauseBtn = document.getElementById('pauseBtn');
+      const restartBtn = document.getElementById('restartBtn');
+      const overlayStart = document.getElementById('overlayStart');
+
+      let stageRect, stageW, stageH;
+      let playerX = 0; // center offset in px
+      let playerW = 64, playerH = 64;
+      let isRunning = false, isPaused = false;
+      let obstacles = [];
+      let lastTime = 0, spawnTimer = 0;
+      let score = 0, high = Number(localStorage.getItem('dodge_high') || 0);
+      let elapsed = 0;
+      let speedMultiplier = 1;
+      let keyState = {left:false,right:false};
+
+      highEl.textContent = high;
+
+      function resize(){
+        stageRect = stage.getBoundingClientRect();
+        stageW = Math.max(300, stageRect.width);
+        stageH = Math.max(300, stageRect.height);
+        // center player
+        playerW = player.offsetWidth;
+        playerH = player.offsetHeight;
+        playerX = (stageW - playerW)/2;
+        updatePlayerPosition();
+      }
+
+      function updatePlayerPosition(){
+        // keep inside
+        if (playerX < 8) playerX = 8;
+        if (playerX > stageW - playerW - 8) playerX = stageW - playerW - 8;
+        player.style.transform = `translateX(${playerX}px)`;
+      }
+
+      function start(){
+        if (isRunning) return;
+        isRunning = true;
+        isPaused = false;
+        obstacles.forEach(o => o.el.remove());
+        obstacles = [];
+        score = 0;
+        elapsed = 0;
+        spawnTimer = 0;
+        speedMultiplier = 1;
+        lastTime = performance.now();
+        centerOverlay.style.display = 'none';
+        startBtn.disabled = true;
+        pauseBtn.textContent = 'Pause';
+        difficultyEl.textContent = 'Easy';
+        requestAnimationFrame(loop);
+      }
+
+      function pauseToggle(){
+        if (!isRunning) return;
+        isPaused = !isPaused;
+        pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+        if (!isPaused) {
+          lastTime = performance.now();
+          requestAnimationFrame(loop);
+        }
+      }
+
+      function restart(){
+        isRunning = false;
+        isPaused = false;
+        startBtn.disabled = false;
+        centerOverlay.style.display = 'flex';
+        overlay.querySelector('h2').textContent = 'Press Start';
+        overlay.querySelector('p').textContent = 'Avoid the red blocks. Score increases while you survive.';
+        obstacles.forEach(o => o.el.remove());
+        obstacles = [];
+      }
+
+      function spawnObstacle(){
+        const size = 30 + Math.round(Math.random()*36);
+        const x = 8 + Math.random() * (stageW - size - 16);
+        const speed = 80 + Math.random()*120 + speedMultiplier * 20; // px/sec
+        const el = document.createElement('div');
+        el.className = 'obstacle';
+        el.style.width = size + 'px';
+        el.style.height = size + 'px';
+        el.style.left = x + 'px';
+        el.style.top = (-size) + 'px';
+        stage.appendChild(el);
+        obstacles.push({el, x, y:-size, size, speed});
+      }
+
+      function loop(now){
+        if (!isRunning || isPaused) return;
+        const dt = Math.min(40, now - lastTime) / 1000; // seconds
+        lastTime = now;
+        elapsed += dt;
+        timeEl.textContent = elapsed.toFixed(1) + 's';
+
+        // input - move player
+        const moveSpeed = 360; // px/sec
+        if (keyState.left) playerX -= moveSpeed * dt;
+        if (keyState.right) playerX += moveSpeed * dt;
+        updatePlayerPosition();
+
+        // spawn logic
+        spawnTimer += dt;
+        const spawnInterval = Math.max(0.28, 0.9 - speedMultiplier*0.05); // decreases with difficulty
+        if (spawnTimer > spawnInterval){
+          spawnTimer = 0;
+          // spawn 1 or sometimes 2
+          spawnObstacle();
+          if (Math.random() < 0.12) spawnObstacle();
+        }
+
+        // update obstacles
+        for (let i = obstacles.length -1; i>=0; i--){
+          const o = obstacles[i];
+          o.y += o.speed * dt;
+          o.el.style.top = o.y + 'px';
+
+          // collision check (AABB)
+          const px = playerX;
+          const py = stageH - playerH - 16;
+          if (o.x < px + playerW && o.x + o.size > px &&
+              o.y < py + playerH && o.y + o.size > py){
+            // hit
+            gameOver();
+            return;
+          }
+
+          // remove if off-screen
+          if (o.y > stageH + 40){
+            o.el.remove();
+            obstacles.splice(i,1);
+            score += 10;
+            scoreEl.textContent = score;
+            if (score > high){
+              high = score;
+              highEl.textContent = high;
+              localStorage.setItem('dodge_high', high);
+            }
+          }
+        }
+
+        // difficulty scaling
+        speedMultiplier = 1 + Math.min(10, elapsed * 0.12); // ramps up over time
+        if (elapsed < 10) difficultyEl.textContent = 'Easy';
+        else if (elapsed < 25) difficultyEl.textContent = 'Medium';
+        else if (elapsed < 45) difficultyEl.textContent = 'Hard';
+        else difficultyEl.textContent = 'Insane';
+
+        // small incremental score over time
+        score += Math.round(dt * 2);
+        scoreEl.textContent = score;
+
+        requestAnimationFrame(loop);
+      }
+
+      function gameOver(){
+        isRunning = false;
+        startBtn.disabled = false;
+        centerOverlay.style.display = 'flex';
+        overlay.querySelector('h2').textContent = 'Game Over';
+        overlay.querySelector('p').textContent = `You scored ${score} points — survived ${elapsed.toFixed(1)}s.`;
+      }
+
+      // keyboard
+      window.addEventListener('keydown', e=>{
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keyState.left = true;
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keyState.right = true;
+        if (e.key === ' '){ e.preventDefault(); if (!isRunning) start(); else pauseToggle(); }
+      });
+      window.addEventListener('keyup', e=>{
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keyState.left = false;
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keyState.right = false;
+      });
+
+      // touch (left/right halves)
+      stage.addEventListener('touchstart', function(ev){
+        ev.preventDefault();
+        const x = ev.touches[0].clientX - stageRect.left;
+        if (!isRunning) start();
+        if (x < stageW/2) keyState.left = true; else keyState.right = true;
+      }, {passive:false});
+      stage.addEventListener('touchend', function(ev){
+        keyState.left = keyState.right = false;
+      });
+
+      // click/tap to toggle pause
+      stage.addEventListener('click', function(ev){
+        if (!isRunning) return;
+        pauseToggle();
+      });
+
+      // buttons
+      startBtn.addEventListener('click', start);
+      overlayStart.addEventListener('click', start);
+      pauseBtn.addEventListener('click', pauseToggle);
+      restartBtn.addEventListener('click', restart);
+
+      // keep size updated
+      window.addEventListener('resize', resize);
+      // initial
+      resize();
+      // focus stage for keyboard on desktop
+      stage.addEventListener('mouseenter', ()=>stage.focus());
+
+      // small visual update loop for player smooth position if using mouse move
+      let mouseDown = false;
+      window.addEventListener('mousedown', e=>mouseDown=true);
+      window.addEventListener('mouseup', e=>mouseDown=false);
+
+      // allow mouse move to control on desktop (optional)
+      stage.addEventListener('mousemove', e=>{
+        if (e.buttons === 1){ // left click held
+          const x = e.clientX - stageRect.left - playerW/2;
+          playerX = x;
+          updatePlayerPosition();
+        }
+      });
+
+      // expose small debug (not necessary but helpful)
+      window.__dodge = {start, restart, pauseToggle};
+    })();
+  </script>
+</body>
+</html>

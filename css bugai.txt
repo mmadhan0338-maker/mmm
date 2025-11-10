@@ -1,0 +1,112 @@
+/* === Gaming Style CSS === */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  --bg-color: #0a0a0a;
+  --player-color: #00ff9d;
+  --enemy-color: #ff0033;
+  --accent-color: #00b3ff;
+  --text-color: #ffffff;
+  --border-radius: 10px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: radial-gradient(circle at center, #101010, #000);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-color);
+  font-family: 'Press Start 2P', cursive;
+}
+
+/* Game container */
+.game-area {
+  position: relative;
+  width: 800px;
+  height: 600px;
+  background: linear-gradient(180deg, #111, #000);
+  border: 3px solid var(--accent-color);
+  box-shadow: 0 0 40px var(--accent-color);
+  overflow: hidden;
+}
+
+/* Player style */
+.player {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  width: 60px;
+  height: 60px;
+  background-color: var(--player-color);
+  border-radius: var(--border-radius);
+  transform: translateX(-50%);
+  box-shadow: 0 0 15px var(--player-color);
+  transition: 0.1s;
+}
+
+/* Enemy blocks or obstacles */
+.enemy {
+  position: absolute;
+  top: 0;
+  width: 50px;
+  height: 50px;
+  background-color: var(--enemy-color);
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 20px var(--enemy-color);
+}
+
+/* Scoreboard */
+.score {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: var(--accent-color);
+  font-size: 14px;
+  text-shadow: 0 0 10px var(--accent-color);
+}
+
+/* Game over text */
+.game-over {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--enemy-color);
+  font-size: 18px;
+  text-shadow: 0 0 20px var(--enemy-color);
+  display: none;
+}
+
+/* Buttons */
+button {
+  background: var(--accent-color);
+  border: none;
+  padding: 10px 20px;
+  color: #fff;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 10px var(--accent-color);
+  transition: 0.3s;
+}
+
+button:hover {
+  background: var(--player-color);
+  box-shadow: 0 0 20px var(--player-color);
+}
+
+/* Animation for glowing effect */
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 10px var(--accent-color); }
+  50% { box-shadow: 0 0 30px var(--accent-color); }
+}
+
+/* Optional glowing border animation */
+.game-area {
+  animation: glow 2s infinite;
+}
